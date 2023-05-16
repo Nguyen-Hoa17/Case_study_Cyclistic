@@ -1,0 +1,211 @@
+---
+title: "Hoa_Nguyen_casetudy_cyclistic"
+author: "Hoa Nguyen"
+date: "2023-04-21"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+This is my analysis of the case study of the **Google Data Analytics** certificate program. I'll be performing my process of data cleaning, analyzing, and visualizing data, then summarizing the data and delivering insights to solve business questions.
+
+# Scenario
+
+You are a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director
+of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore,
+your team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights,
+your team will design a new marketing strategy to convert casual riders into annual members. But first, Cyclistic executives
+must approve your recommendations, so they must be backed up with compelling data insights and professional data
+visualizations.
+
+# Characters and teams
+
+* **Cyclistic:** A bike-share program that features more than 5,800 bicycles and 600 docking stations. Cyclistic sets itself
+apart by also offering reclining bikes, hand tricycles, and cargo bikes, making bike-share more inclusive to people with
+disabilities and riders who can’t use a standard two-wheeled bike. The majority of riders opt for traditional bikes; about
+8% of riders use the assistive options. Cyclistic users are more likely to ride for leisure, but about 30% use them to
+commute to work each day.
+* **Lily Moreno:** The director of marketing and your manager. Moreno is responsible for the development of campaigns
+and initiatives to promote the bike-share program. These may include email, social media, and other channels.
+* **Cyclistic marketing analytics team:** A team of data analysts who are responsible for collecting, analyzing, and
+reporting data that helps guide Cyclistic marketing strategy. You joined this team six months ago and have been busy
+learning about Cyclistic’s mission and business goals — as well as how you, as a junior data analyst, can help Cyclistic
+achieve them.
+* **Cyclistic executive team:** The notoriously detail-oriented executive team will decide whether to approve the
+recommended marketing program.
+
+I'll be following the six phases of data analysis: 
+* Ask
+* Prepare
+* Process
+* Analyze
+* Share
+* Act
+
+# Ask
+*In this phase, we define the problem and understand the stakeholder expectations*
+The problem of this case study **1.How do annual members and casual riders use Cyclistic bikes differently?
+2. Why would casual riders buy Cyclistic annual memberships?
+3. How can Cyclistic use digital media to influence casual riders to become members?**
+the stakeholder expectations: *Design marketing strategies aimed at converting casual riders into annual members*
+
+# Prepare
+*In this phase we will collect and store data then use for upcomming analysis process.*
+
+*Identify which kinds of data are most useful for solving a particular problem.*
+
+The data can be downloaded at \textcolor{blue}{}[divvy_trip](https://divvy-tripdata.s3.amazonaws.com/index.html)
+
+I will use the most recent year of data based on my current time.
+The data time frame is from **1/2022 to 12/2022**. The data is separated by each month in each file.
+
+This data is suitable for solving this business problem because it contains insights into riders' patterns of behavior.
+## Load data 
+
+First, we will load the package needed for the data analysis process.
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(skimr)
+library(hydroTSM)
+library(dplyr)
+```
+
+```{r}
+M1<-read.csv("C:/Users/ADMIN/Videos/Captures/202201-divvy-tripdata.csv")
+M2<-read.csv("C:/Users/ADMIN/Videos/Captures/202202-divvy-tripdata.csv")
+M3<-read.csv("C:/Users/ADMIN/Videos/Captures/202203-divvy-tripdata.csv")
+M4<-read.csv("C:/Users/ADMIN/Videos/Captures/202204-divvy-tripdata.csv")
+M5<-read.csv("C:/Users/ADMIN/Videos/Captures/202205-divvy-tripdata.csv")
+M6<-read.csv("C:/Users/ADMIN/Videos/Captures/202206-divvy-tripdata.csv")
+M7<-read.csv("C:/Users/ADMIN/Videos/Captures/202207-divvy-tripdata.csv")
+M8<-read.csv("C:/Users/ADMIN/Videos/Captures/202208-divvy-tripdata.csv")
+M9<-read.csv("C:/Users/ADMIN/Videos/Captures/202209-divvy-publictripdata.csv")
+M10<-read.csv("C:/Users/ADMIN/Videos/Captures/202210-divvy-tripdata.csv")
+M11<-read.csv("C:/Users/ADMIN/Videos/Captures/202211-divvy-tripdata.csv")
+M12<-read.csv("C:/Users/ADMIN/Videos/Captures/202212-divvy-tripdata.csv")
+```
+
+# Compare column names each of the files
+# We match column names perfectly before we can use a command to join them into single file
+```{r}
+colnames(M1)
+colnames(M2)
+colnames(M3)
+colnames(M4)
+colnames(M5)
+colnames(M6)
+colnames(M7)
+colnames(M8)
+colnames(M9)
+colnames(M10)
+colnames(M11)
+colnames(M12)
+```
+**\textcolor{yellow}{All the column names of files matched each other}
+# We combine all the files into a single dataframe
+```{r}
+data_combined <- bind_rows(M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12)
+colnames(data_combined)
+```
+We remove the useless variables and take the rest. Convert irrelevant data type(character into Date data type)
+
+```{r}
+data_combined <- select(data_combined, -c(ride_id, start_station_id, end_station_id, start_lat, start_lng, end_lat, end_lng))
+data_combined <- mutate(data_combined, started_at = as.POSIXct(started_at, format = "%Y-%m-%d %H:%M:%S"), ended_at = as.POSIXct(ended_at, format = "%Y-%m-%d %H:%M:%S"))
+colnames(data_combined)
+```
+Dimensions of the dataframe
+
+```{r}
+dim(data_combined)
+```
+# Process
+
+*We will find and eliminate any error and inaccuracy in the data.*
+
+
+Add new columns(date, day, month, year, day of the week, season, ride_length)
+
+```{r}
+data_Process <- data_combined
+data_Process$date <- as.Date(data_Process$started_at)
+data_Process$day <- format(as.Date(data_Process$date), '%d')
+data_Process$month <- format(as.Date(data_Process$date), '%m')
+data_Process$year <- format(as.Date(data_Process$date), '%Y')
+data_Process$day_of_week <- format(as.Date(data_Process$date), '%A')
+data_Process$season <- time2season(as.Date(data_Process$date), out.fmt = "seasons")
+```
+```{r}
+data_Process$ride_length <- difftime(data_Process$ended_at,data_Process$started_at, units = 'mins')
+data_Process$ride_length <- round(data_Process$ride_length, digits = 1)
+```
+Change ride_length data type to numeric.
+
+```{r}
+data_Process$ride_length <- as.numeric(data_Process$ride_length)
+```
+We will be cleaning data next. We remove rows with ride_length below or equal to 0.
+
+
+```{r}
+data_Process <- data_Process[!(data_Process$ride_length <= 0),]
+```
+```{r}
+skim_without_charts(data_combined)
+```
+
+
+```{r}
+summary(data_Process)
+```
+
+```{r}
+nrow(filter(data_Process, data_Process$start_station_name == ''))
+```
+```{r}
+summary(data_Process$ride_length)
+```
+Calculate mean by member casual
+
+```{r}
+data_Process %>%
+  group_by(member_casual) %>%
+  summarise(mean = mean(ride_length))
+```
+```{r}
+nrow(filter(data_Process, data_Process$member_casual == 'casual'))/nrow(data_Process)
+nrow(filter(data_Process, data_Process$member_casual == 'member'))/nrow(data_Process)
+```
+
+write.csv(data_Process, file = "dong.csv")
+write.csv(data_Process, file = "hoa.csv")
+# Analyze
+*For this phase we will be using tools to transform and organize information so we can draw useful information/conclusion.*
+
+We can use R to visualize data and transform it in any way we like. But I would like to use Tableau as practice because it is also part of the course and I want to make use of every tool I was taught.(
+For the Tableau Dashboard you can visit [Here] (https://public.tableau.com/app/profile/nguy.n.hoa8602/viz/Cyclistic_case_study_16822512065760/Tableaudebord1)
+
+After visualization, we can infer some information:
+
+*  Members take **59%** of total rides. 
+* The most **popular bike types** are classic and electric. For casual riders, they prefer docked bikes more than member riders.
+* Riders **ride the most** on **Saturday**. Member riders ride equally throughout the weekdays with slight increase in mid weekdays. Casual riders ride equally on weekdays and more on weekends.
+* **Summer** is the **most busy** season for both riders type and **Winter** is the **least busy** season for both riders type.
+
+# Share
+
+*We will interpret result and share with others to help stakeholders making data-driven-decision*
+
+We will demonstrate and make a presentation to the stakeholders to deliver our findings in order to help them make a decision on the problem.
+
+# Act
+
+* To turn casual riders into members, we can make discounts on the time when riders ride the most like Summer or on the weekend.
+* Show them the perks of becoming a member, and customize the discount and membership program for their specific riding habits.
